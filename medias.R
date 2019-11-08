@@ -1,3 +1,4 @@
+
 #==============================================================================================================
 # Funcion para hacer tablas de medias
 #  df             = data.frame
@@ -23,7 +24,7 @@
 # medias(data_,variables=c("EDAD","ESTATURA"), group_by_col=c("SEXO","RUBIO"))
 #
 #==================================================================================
-medias <- function(df,variables, group_by_col = NULL, decimales=2, show_warnings = TRUE) {
+medias <- function(df,variables, group_by_col = NULL, decimales=2, show_warnings = TRUE, n=TRUE, missing=TRUE, min=TRUE, max= TRUE, mean=TRUE, sd=TRUE, median=TRUE, range=TRUE) {
   require("dplyr")
   require("forcats")
 
@@ -42,11 +43,14 @@ medias <- function(df,variables, group_by_col = NULL, decimales=2, show_warnings
     if (length(real_v) > 0 & !is.factor(real_v))
     {
         result_temp <- df %>% summarise(
-                                 n = n(),
+                                 n = n() - sum(is.na(.data[[v]])),
+                                 missing = sum(is.na(.data[[v]])),
                                  min = round(min(.data[[v]], na.rm=TRUE), digits=decimales),
                                  max = round(max(.data[[v]], na.rm=TRUE), digits=decimales),
-                                 media = round(mean(.data[[v]], na.rm = TRUE), digits=decimales),
-                                 sd = round(sd(.data[[v]], na.rm = TRUE), digits=decimales)
+                                 mean = round(mean(.data[[v]], na.rm = TRUE), digits=decimales),
+                                 sd = round(sd(.data[[v]], na.rm = TRUE), digits=decimales),
+                                 median = round(median(.data[[v]], na.rm = TRUE), digits=decimales),
+                                 range = round(max(.data[[v]], na.rm = TRUE) - min(.data[[v]], na.rm = TRUE), digits=decimales)
                          )
         result_temp <- as.data.frame(result_temp)
         result_temp <- cbind(c(v,rep("",nrow(result_temp)-1)),result_temp)
@@ -55,6 +59,16 @@ medias <- function(df,variables, group_by_col = NULL, decimales=2, show_warnings
         {
           colnames(result_temp)[2] <- "GRUPO"
         }
+
+        if (n == FALSE) result_temp$n <- NULL
+        if (missing == FALSE) result_temp$missing <- NULL
+        if (min == FALSE) result_temp$min <- NULL
+        if (max == FALSE) result_temp$max <- NULL
+        if (mean == FALSE) result_temp$mean <- NULL
+        if (sd == FALSE) result_temp$sd <- NULL
+        if (median == FALSE) result_temp$median <- NULL
+        if (range == FALSE) result_temp$range <- NULL
+        
 
 
       if (exists("result_df")) result_df <- rbind(result_df,result_temp)
@@ -67,5 +81,3 @@ medias <- function(df,variables, group_by_col = NULL, decimales=2, show_warnings
   }
   if (exists("result_df")) return(result_df)
 }
-
-
