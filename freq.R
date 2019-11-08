@@ -5,7 +5,7 @@
 #  nombre.vars    = TRUE/FALSE para si quieres el nombre de la variable como fila
 #==================================================================================
 
-freq <- function(df,variables, decimales=2, nombre.vars = TRUE) {
+freq <- function(df, variables, decimales=2, nombre.vars = TRUE) {
   
   # vars = substitute(variables)
   

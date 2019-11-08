@@ -6,6 +6,15 @@
 #  group_by_col   = una o varias variables c("SEXO","COINCIDEN")
 #  decimales      = 2 (default), número de decimales para el redondeo
 #  show_warnings  = por defecto muestra los warnings pero se puede poner en FALSE para rMarkdown y esas cosas
+#  n              = default TRUE: show total of valid cases
+#  missing        = default TRUE: show total of missing cases
+#  min            = default TRUE: show min
+#  max            = default TRUE: show max
+#  mean           = default TRUE: show mean
+#  sd             = default TRUE: show standard deviation
+#  median         = default TRUE: show median
+#  range          = default TRUE: show range
+#
 #==============================================================================================================
 # EJEMPLO DE USO
 # -------------------
@@ -57,7 +66,7 @@ medias <- function(df,variables, group_by_col = NULL, decimales=2, show_warnings
         colnames(result_temp)[1] <- "VAR"
         if (!is.null(group_by_col))
         {
-          colnames(result_temp)[2] <- "GRUPO"
+          colnames(result_temp)[2] <- group_by_col
         }
 
         if (n == FALSE) result_temp$n <- NULL
