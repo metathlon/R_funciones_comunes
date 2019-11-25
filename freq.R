@@ -1,35 +1,88 @@
-#==================================================================================
+
+#==============================================================================================================
 # Funcion para hacer tablas de frecuencias
 #  df             = data.frame
 #  variables      = una o varias variables c("aSDF","fds")
-#  nombre.vars    = TRUE/FALSE para si quieres el nombre de la variable como fila
+#  group_by_col   = una o varias variables c("SEXO","COINCIDEN")
+#  decimales      = 2 (default), número de decimales para el redondeo
+#  show_warnings  = por defecto muestra los warnings pero se puede poner en FALSE para rMarkdown y esas cosas
+#  n              = default TRUE: show total of valid cases
+#  missing        = default TRUE: show total of missing cases
+#  min            = default TRUE: show min
+#  max            = default TRUE: show max
+#  mean           = default TRUE: show mean
+#  sd             = default TRUE: show standard deviation
+#  median         = default TRUE: show median
+#  range          = default TRUE: show range
+#
+#==============================================================================================================
+# EJEMPLO DE USO
+# -------------------
+# Generamos datos aleatorios
+# edad_ <- sample(x = 65:100, size=30, replace = TRUE )
+# estatura_ <- as.integer(sample(x = 120:205, size=30, replace = TRUE ))
+# sexo_ <- sample(x = c("Hombre", "Mujer"), prob = c(.5,.5), size = 30, replace = TRUE)
+# rubio_ <- sample(x = c("Si", "No"), prob = c(.2,.8), size = 30, replace = TRUE)
+# data_ <- data.frame(EDAD=edad_,ESTATURA=estatura_,SEXO=sexo_,RUBIO=rubio_)
+# 
+# # Medias
+# medias(data_,variables="EDAD")
+# medias(data_,variables="EDAD", group_by_col="SEXO")
+# 
+# medias(data_,variables=c("EDAD","ESTATURA"))
+# medias(data_,variables=c("EDAD","ESTATURA"), group_by_col=c("SEXO","RUBIO"))
+#
 #==================================================================================
+freq <- function(df,variables, group_by_col = NULL, decimales=2, show_warnings = TRUE, n=TRUE, missing=TRUE, min=TRUE, max= TRUE, mean=TRUE, sd=TRUE, median=TRUE, range=TRUE) {
+  require("dplyr")
+  #require("forcats")
 
-freq <- function(df, variables, decimales=2, nombre.vars = TRUE) {
-  
-  # vars = substitute(variables)
-  
-  
+  if (!is.null(group_by_col))
+  {
+    #------------------------------------- CONVERESION EXPLICITA DE NA a MISSING
+    df = df %>% mutate_if(is.factor,
+                          fct_explicit_na,
+                          na_level = "---")
+    
+    df = df %>% group_by_at(group_by_col)
+  }
+
   for (v in variables) {
-    v.table = table(df[,substitute(v)])
-    v.df <- cbind(rownames(v.table),v.table, paste(round(prop.table(v.table) * 100, digits=decimales),"%", sep=""))
-    
-    if (nombre.vars){
-      v.df <- cbind("",v.df)
-      v.df <- rbind(c(v,"","",""),v.df)
-    } 
-    
-    rownames(v.df) <- NULL
-    if (!exists("freq.table")) freq.table <- v.df
-    else freq.table = rbind(freq.table, v.df)
+    real_v = df[,substitute(v)]
+    if (!is.factor(real_v)) warning(paste(v, "no es un factor (considerar si debería serlo)"), call. = show_warnings)
+    if (length(real_v) > 0)
+    {
+        result_temp <- df %>% summarise(
+                                 n_valido = n() - sum(is.na(.data[[v]])),
+                                        ) %>%
+                              mutate(rel.freq = (n/sum(n))*100)
+
+        result_temp <- as.data.frame(result_temp)
+        result_temp <- cbind(c(v,rep("",nrow(result_temp)-1)),result_temp)
+        colnames(result_temp)[1] <- "VAR"
+        if (!is.null(group_by_col))
+        {
+          colnames(result_temp)[2] <- group_by_col
+        }
+
+        if (n == FALSE) result_temp$n <- NULL
+        if (missing == FALSE) result_temp$missing <- NULL
+        if (min == FALSE) result_temp$min <- NULL
+        if (max == FALSE) result_temp$max <- NULL
+        if (mean == FALSE) result_temp$mean <- NULL
+        if (sd == FALSE) result_temp$sd <- NULL
+        if (median == FALSE) result_temp$median <- NULL
+        if (range == FALSE) result_temp$range <- NULL
+        
+
+
+      if (exists("result_df")) result_df <- rbind(result_df,result_temp)
+      else result_df <- result_temp  
+    }
+    else {
+      warning(paste(v, "está vacía " + length(real_v)), call. = show_warnings)
+    }
     
   }
-  
-  
-  if (exists("freq.table")) {
-    if (nombre.vars) colnames(freq.table) <- c("Variable","Categorias","n", "%")
-    else colnames(freq.table) <- c("Categorias","n", "%")
-    return(freq.table)
-  } 
-  else function(e) print("No se ha podido formar tabla de resultados")
+  if (exists("result_df")) return(result_df)
 }
