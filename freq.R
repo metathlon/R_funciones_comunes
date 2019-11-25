@@ -33,56 +33,113 @@
 # medias(data_,variables=c("EDAD","ESTATURA"), group_by_col=c("SEXO","RUBIO"))
 #
 #==================================================================================
-freq <- function(df,variables, group_by_col = NULL, decimales=2, show_warnings = TRUE, n=TRUE, missing=TRUE, min=TRUE, max= TRUE, mean=TRUE, sd=TRUE, median=TRUE, range=TRUE) {
+freq <- function(df,..., group_by_col = NULL, pretty=TRUE, decimales=2, show_warnings = TRUE, n=TRUE, total=TRUE) {
   require("dplyr")
-  #require("forcats")
 
-  if (!is.null(group_by_col))
+  vars <- enquos(...)
+  for (v in vars) 
   {
-    #------------------------------------- CONVERESION EXPLICITA DE NA a MISSING
-    df = df %>% mutate_if(is.factor,
-                          fct_explicit_na,
-                          na_level = "---")
-    
-    df = df %>% group_by_at(group_by_col)
-  }
+      result_temp <- df %>% group_by(!! v) %>%
+                           summarise(
+                                      n_valido = n(),
+                                     ) %>%
+                           mutate(rel.freq = (n_valido/sum(n_valido))*100)
 
-  for (v in variables) {
-    real_v = df[,substitute(v)]
-    if (!is.factor(real_v)) warning(paste(v, "no es un factor (considerar si debería serlo)"), call. = show_warnings)
-    if (length(real_v) > 0)
-    {
-        result_temp <- df %>% summarise(
-                                 n_valido = n() - sum(is.na(.data[[v]])),
-                                        ) %>%
-                              mutate(rel.freq = (n/sum(n))*100)
+      #-------- add the column for values within the variable
+      result_temp <- as.data.frame(result_temp)
+      colnames(result_temp)[1] <- "VALUES"
 
-        result_temp <- as.data.frame(result_temp)
-        result_temp <- cbind(c(v,rep("",nrow(result_temp)-1)),result_temp)
-        colnames(result_temp)[1] <- "VAR"
-        if (!is.null(group_by_col))
-        {
-          colnames(result_temp)[2] <- group_by_col
-        }
+      #-------- add the column with the variable NAME
+      if (pretty == TRUE)
+      {
+        result_temp <- cbind(c(quo_name(v),rep("",nrow(result_temp)-1)), result_temp)    
+        colnames(result_temp)[1] <- "VAR"  
+      }
+      else 
+      {
+        result_temp <- cbind(rep(quo_name(v),nrow(result_temp)), result_temp)    
+        colnames(result_temp)[1] <- "VAR"   
+      }
 
-        if (n == FALSE) result_temp$n <- NULL
-        if (missing == FALSE) result_temp$missing <- NULL
-        if (min == FALSE) result_temp$min <- NULL
-        if (max == FALSE) result_temp$max <- NULL
-        if (mean == FALSE) result_temp$mean <- NULL
-        if (sd == FALSE) result_temp$sd <- NULL
-        if (median == FALSE) result_temp$median <- NULL
-        if (range == FALSE) result_temp$range <- NULL
-        
+      #-------- add totals row 
+      if (total == TRUE)
+      {
+          if (pretty == TRUE)
+          {
+            var_total <- paste(quo_name(v),"TOTAL")
+            levels(result_temp$VAR) <- c(levels(result_temp$VAR),var_total)
+            result_temp <- rbind(result_temp, c(var_total,rep("",ncol(result_temp)-1)))
+          }
+      }
+      
 
+      #-------- add totals row 
+      if (total == TRUE)
+      {
+          if (pretty == TRUE)
+          {
+          }
+      }
 
       if (exists("result_df")) result_df <- rbind(result_df,result_temp)
       else result_df <- result_temp  
-    }
-    else {
-      warning(paste(v, "está vacía " + length(real_v)), call. = show_warnings)
-    }
-    
+      
   }
+  
   if (exists("result_df")) return(result_df)
+
+  # for (v in variables) 
+  # {
+  #   var_name = substitute(v)
+  #   real_v = df[,var_name]
+  #   if (!is.factor(real_v)) warning(paste(v, "no es un factor (considerar si debería serlo)"), call. = show_warnings)
+  #   if (length(real_v) > 0)
+  #   {
+  #      if (!is.null(group_by_col))
+  #      {
+  #       result_temp <- df %>% group_by(!! group_by_col, !! v) %>%
+  #                             summarise(
+  #                                       n_valido = n() - sum(is.na(.data[[v]])),
+  #                                       ) %>%
+  #                             mutate(rel.freq = (n/sum(n))*100)
+  #      }
+  #      else
+  #      {
+  #       result_temp <- df %>% group_by(!! v) %>%
+  #                             summarise(
+  #                                       n_valido = n() - sum(is.na(.data[[v]])),
+  #                                       ) %>%
+  #                             mutate(rel.freq = (n/sum(n))*100)
+  #      }
+
+        
+
+  #       result_temp <- as.data.frame(result_temp)
+  #       result_temp <- cbind(c(v,rep("",nrow(result_temp)-1)),result_temp)
+  #       colnames(result_temp)[1] <- "VAR"
+  #       if (!is.null(group_by_col))
+  #       {
+  #         colnames(result_temp)[2] <- group_by_col
+  #       }
+
+  #       if (n == FALSE) result_temp$n <- NULL
+  #       if (missing == FALSE) result_temp$missing <- NULL
+  #       if (min == FALSE) result_temp$min <- NULL
+  #       if (max == FALSE) result_temp$max <- NULL
+  #       if (mean == FALSE) result_temp$mean <- NULL
+  #       if (sd == FALSE) result_temp$sd <- NULL
+  #       if (median == FALSE) result_temp$median <- NULL
+  #       if (range == FALSE) result_temp$range <- NULL
+        
+
+
+  #     if (exists("result_df")) result_df <- rbind(result_df,result_temp)
+  #     else result_df <- result_temp  
+  #   }
+  #   else {
+  #     warning(paste(v, "está vacía " + length(real_v)), call. = show_warnings)
+  #   }
+    
+  # }
+  # if (exists("result_df")) return(result_df)
 }
