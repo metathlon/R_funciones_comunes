@@ -45,30 +45,33 @@ freq <- function(df,..., group_by_col = NULL, pretty=TRUE, decimales=2, show_war
                                      ) %>%
                            mutate(rel.freq = (n_valido/sum(n_valido))*100)
 
+      
       #-------- add the column for values within the variable
-      result_temp <- as.data.frame(result_temp)
+      #result_temp <- as.data.frame(result_temp)
       colnames(result_temp)[1] <- "VALUES"
 
       #-------- add the column with the variable NAME
       if (pretty == TRUE)
       {
-        result_temp <- cbind(c(quo_name(v),rep("",nrow(result_temp)-1)), result_temp)    
-        colnames(result_temp)[1] <- "VAR"  
+        result_temp <- mutate(result_temp,VAR=c(quo_name(v),rep("",nrow(result_temp)-1)))
+
       }
       else 
       {
-        result_temp <- cbind(rep(quo_name(v),nrow(result_temp)), result_temp)    
-        colnames(result_temp)[1] <- "VAR"   
+       result_temp <- mutate(result_temp,VAR=rep(quo_name(v),nrow(result_temp)))
       }
+      #-- take VAR to the front
+      result_temp <- result_temp %>% select(VAR, everything())
 
       #-------- add totals row 
       if (total == TRUE)
       {
+          var_total <- paste(quo_name(v),"TOTAL")
+          levels(result_temp$VALUES) <- c(levels(result_temp$VALUES),"--")
+          result_temp <- result_temp %>% rbind(c(var_total,"--",sum(.$n_valido),sum(.$rel.freq)))
           if (pretty == TRUE)
           {
-            var_total <- paste(quo_name(v),"TOTAL")
-            levels(result_temp$VAR) <- c(levels(result_temp$VAR),var_total)
-            result_temp <- rbind(result_temp, c(var_total,rep("",ncol(result_temp)-1)))
+            result_temp <- result_temp %>% rbind(rep(NA,nrow(result_temp)))
           }
       }
       
@@ -86,60 +89,19 @@ freq <- function(df,..., group_by_col = NULL, pretty=TRUE, decimales=2, show_war
       
   }
   
-  if (exists("result_df")) return(result_df)
+  if (exists("result_df")) 
+  {
+    result_df <- as.data.frame(result_df)
+    udaic_freq$DATOS <- result_df
 
-  # for (v in variables) 
-  # {
-  #   var_name = substitute(v)
-  #   real_v = df[,var_name]
-  #   if (!is.factor(real_v)) warning(paste(v, "no es un factor (considerar si debería serlo)"), call. = show_warnings)
-  #   if (length(real_v) > 0)
-  #   {
-  #      if (!is.null(group_by_col))
-  #      {
-  #       result_temp <- df %>% group_by(!! group_by_col, !! v) %>%
-  #                             summarise(
-  #                                       n_valido = n() - sum(is.na(.data[[v]])),
-  #                                       ) %>%
-  #                             mutate(rel.freq = (n/sum(n))*100)
-  #      }
-  #      else
-  #      {
-  #       result_temp <- df %>% group_by(!! v) %>%
-  #                             summarise(
-  #                                       n_valido = n() - sum(is.na(.data[[v]])),
-  #                                       ) %>%
-  #                             mutate(rel.freq = (n/sum(n))*100)
-  #      }
+    class(udaic_freq) <- "udaic_freq"
+    return(udaic_freq)
+  }
+}
 
-        
+print.udaic_freq <- function(x, ...) {
 
-  #       result_temp <- as.data.frame(result_temp)
-  #       result_temp <- cbind(c(v,rep("",nrow(result_temp)-1)),result_temp)
-  #       colnames(result_temp)[1] <- "VAR"
-  #       if (!is.null(group_by_col))
-  #       {
-  #         colnames(result_temp)[2] <- group_by_col
-  #       }
+  cat("========================")
+  x$DATOS
 
-  #       if (n == FALSE) result_temp$n <- NULL
-  #       if (missing == FALSE) result_temp$missing <- NULL
-  #       if (min == FALSE) result_temp$min <- NULL
-  #       if (max == FALSE) result_temp$max <- NULL
-  #       if (mean == FALSE) result_temp$mean <- NULL
-  #       if (sd == FALSE) result_temp$sd <- NULL
-  #       if (median == FALSE) result_temp$median <- NULL
-  #       if (range == FALSE) result_temp$range <- NULL
-        
-
-
-  #     if (exists("result_df")) result_df <- rbind(result_df,result_temp)
-  #     else result_df <- result_temp  
-  #   }
-  #   else {
-  #     warning(paste(v, "está vacía " + length(real_v)), call. = show_warnings)
-  #   }
-    
-  # }
-  # if (exists("result_df")) return(result_df)
 }
