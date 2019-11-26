@@ -24,75 +24,73 @@
 # sexo_ <- sample(x = c("Hombre", "Mujer"), prob = c(.5,.5), size = 30, replace = TRUE)
 # rubio_ <- sample(x = c("Si", "No"), prob = c(.2,.8), size = 30, replace = TRUE)
 # data_ <- data.frame(EDAD=edad_,ESTATURA=estatura_,SEXO=sexo_,RUBIO=rubio_)
-# 
+#
 # # Medias
 # medias(data_,variables="EDAD")
 # medias(data_,variables="EDAD", group_by_col="SEXO")
-# 
+#
 # medias(data_,variables=c("EDAD","ESTATURA"))
 # medias(data_,variables=c("EDAD","ESTATURA"), group_by_col=c("SEXO","RUBIO"))
 #
 #==================================================================================
+require("dplyr")
+
+udaic_freq <- function(df, var)
+{
+  v <- enquo(var)
+  result_temp <- df %>% group_by(!! v) %>%
+                     summarise(
+                                n = n(),
+                               ) %>%
+                     mutate(rel.freq = (n/sum(n))*100)
+  class(result_temp) <- "udaic.freq"
+  result_temp$
+  return(result_temp)
+}
+
+
 freq <- function(df,..., group_by_col = NULL, pretty=TRUE, decimales=2, show_warnings = TRUE, n=TRUE, total=TRUE) {
-  require("dplyr")
 
   vars <- enquos(...)
-  for (v in vars) 
+  
+  for (v in vars)
   {
+
       result_temp <- df %>% group_by(!! v) %>%
                            summarise(
-                                      n_valido = n(),
+                                      n = n(),
                                      ) %>%
-                           mutate(rel.freq = (n_valido/sum(n_valido))*100)
+                           mutate(rel.freq = (n/sum(n))*100)
 
-      
-      #-------- add the column for values within the variable
+
+      #-------- add the column for Values within the variable
       #result_temp <- as.data.frame(result_temp)
-      colnames(result_temp)[1] <- "VALUES"
+      colnames(result_temp)[1] <- "Values"
 
       #-------- add the column with the variable NAME
-      if (pretty == TRUE)
-      {
-        result_temp <- mutate(result_temp,VAR=c(quo_name(v),rep("",nrow(result_temp)-1)))
+      var_column = rep(quo_name(v),nrow(result_temp))
+      result_temp <- mutate(result_temp,Variable=var_column)
 
-      }
-      else 
-      {
-       result_temp <- mutate(result_temp,VAR=rep(quo_name(v),nrow(result_temp)))
-      }
-      #-- take VAR to the front
-      result_temp <- result_temp %>% select(VAR, everything())
+      #-- take Variable_column to the front
+      result_temp <- result_temp %>% select(Variable, everything())
 
-      #-------- add totals row 
+      #-------- add totals row
       if (total == TRUE)
       {
           var_total <- paste(quo_name(v),"TOTAL")
-          levels(result_temp$VALUES) <- c(levels(result_temp$VALUES),"--")
-          result_temp <- result_temp %>% rbind(c(var_total,"--",sum(.$n_valido),sum(.$rel.freq)))
-          if (pretty == TRUE)
-          {
-            result_temp <- result_temp %>% rbind(rep(NA,nrow(result_temp)))
-          }
+          levels(result_temp$Values) <- c(levels(result_temp$Values),"--")
+          result_temp <- result_temp %>% rbind(c(var_total,"--",sum(.$n),sum(.$rel.freq)))
       }
-      
-
-      #-------- add totals row 
-      if (total == TRUE)
-      {
-          if (pretty == TRUE)
-          {
-          }
-      }
+      row.names(result_temp)
 
       if (exists("result_df")) result_df <- rbind(result_df,result_temp)
-      else result_df <- result_temp  
-      
+      else result_df <- result_temp
+
   }
-  
-  if (exists("result_df")) 
+
+  if (exists("result_df"))
   {
-    result_df <- as.data.frame(result_df)
-    udaic_freq$DATOS <- result_df
+    udaic_freq <- result_df
 
     class(udaic_freq) <- "udaic_freq"
     return(udaic_freq)
@@ -101,7 +99,9 @@ freq <- function(df,..., group_by_col = NULL, pretty=TRUE, decimales=2, show_war
 
 print.udaic_freq <- function(x, ...) {
 
-  cat("========================")
-  x$DATOS
+  cat("========================\n")
+  temp <- data.frame(Variable=x$Variable, Values=x$Values, n=x$n)
+  print(temp)
+  return(temp)
 
 }
