@@ -70,14 +70,29 @@ udaic_freq <- function(df, var, total=TRUE, decimales=2)
 }
 
 
+freq_form <- function(df, ...)
+{
+  d <- enquo(df)
+  vars <- enquos(...)
+  return(freq(d,vas))
+}
 
-
-freq <- function(df,..., group_by_col = NULL, pretty=TRUE, decimales=2, show_warnings = TRUE, n=TRUE, total=TRUE) {
+freq <- function(df,..., pretty=TRUE, decimales=2, show_warnings = TRUE, n=TRUE, total=TRUE) {
 
   vars <- enquos(...)
   
   result_df <- list()
- 
+  
+
+  if (length(vars$group_by_col) > 0)
+  {
+    group <- vars$group_by_col
+    print(group)
+    df <- df %>% group_by(!! group)  
+    vars$group_by_col <- NULL
+  }
+  
+
   for (v in vars)
   {
       result_df[[length(result_df)+1]] <- udaic_freq(df,!! v,total=total, decimales=decimales)
