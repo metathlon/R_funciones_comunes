@@ -1,0 +1,20 @@
+---
+title: "Titulo generico"
+author: "Nombre y Apellidos"
+date: `r format(Sys.time(), "%d %B, %Y")`
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+  word_document:
+    reference_docx: TEMPLATE_NO_BORRAR.docx
+    toc: yes
+---
+
+```{r , message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+source(file="archivo.R")
+``
+
+###### SALTO DE PAGINA
+
+# Descriptivos
