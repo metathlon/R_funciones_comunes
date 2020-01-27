@@ -29,40 +29,58 @@
 #==================================================================================
 require("dplyr")
 
-freq <- function(df,..., col_names=c("Variable","Values","n","rel.freq"), 
+#' Title
+#'
+#' @param df data
+#' @param ... variables (no quotes needed)
+#' @param col_names vector with names for the 4 columns
+#' @param decimales number of decimals to show
+#' @param show_warnings 
+#' @param total 
+#' @param sort_by_values 
+#' @param sort_by_freq 
+#' @param sort_by_percent 
+#' @param sort_decreasing 
+#' @param debug
+#'
+#' @return list of dataframes (1 per variable)
+#' @export
+#'
+#' @examples
+#' 
+freq <- function(df,..., group_by_col = NULL, col_names=c("Variable","Values","n","rel.freq"),
                  decimales=2, show_warnings = TRUE, total=TRUE,
-                 sort_by_values=TRUE, sort_by_freq=FALSE, sort_by_percent=FALSE, sort_decreasing = TRUE) {
-
-  # cat(col_names)
+                 sort_by_values=FALSE, sort_by_freq=FALSE, sort_by_percent=FALSE, sort_decreasing = TRUE,
+                 debug = FALSE) {
+  
+  if (debug) {
+    
+    print(paste("Column names: ",col_names))
+    print(paste("Group by: ",group_by_col))
+    # if (exists(group_by)) cat(paste("\n",group_by))
+  }
   
   if (length(col_names) != 4 ) stop("Numero de columnas en 'col_names' debería ser 4")
-    
-  vars <- enquos(...)
   
+
+  # if (!is.null(group_by_col)) {
+  #   df = df %>% group_by_at(group_by_col)
+  # }
+  
+  vars <- enquos(...)
   result_df <- list()
   
-
-  if (length(vars$group_by_col) > 0)
-  {
-    group <- vars$group_by_col
-    print(group)
-    df <- df %>% group_by(!! group)  
-    vars$group_by_col <- NULL
-  }
-  
-
   for (v in vars)
   {
-      res <- udaic_freq(df,!! v,total=total, decimales=decimales, 
+    res <- udaic_freq(df %>% group_by_at(group_by_col),!! v,total=total, decimales=decimales, 
                         sort_by_values=sort_by_values,
                         sort_by_freq=sort_by_freq,
-                        sort_by_percent=sort_by_percent)
-      names(res) <- col_names
-      
-      result_df[[length(result_df)+1]] <- as.data.frame(res)
-      
+                        sort_by_percent=sort_by_percent)  
+    names(res) <- col_names
+    
+    result_df[[length(result_df)+1]] <- as.data.frame(res)
   }
-
+  
   if (exists("result_df"))
   {
     # class(result_df) <- "udaic_freq"
@@ -74,6 +92,9 @@ freq <- function(df,..., col_names=c("Variable","Values","n","rel.freq"),
 udaic_freq <- function(df, var, total=TRUE, decimales=2, sort_by_values=TRUE, sort_by_freq=FALSE, sort_by_percent=FALSE, sort_decreasing = TRUE)
 {
   v <- enquo(var)
+  # v <- var
+  # v <- enquos(...)
+  # print(class(v))
   
   result_temp <- df %>% group_by(!! v) %>%
     summarise(n = n()) %>%
@@ -104,7 +125,8 @@ udaic_freq <- function(df, var, total=TRUE, decimales=2, sort_by_values=TRUE, so
   #-------- add totals row
   if (total == TRUE)
   {
-    var_total <- paste(quo_name(v),"TOTAL")
+    # var_total <- paste(quo_name(v),"TOTAL")
+    var_total <- paste("TOTAL")
     levels(result_temp$Values) <- c(levels(result_temp$Values),"-")
     result_temp <- result_temp %>% rbind(c(var_total,"-",sum(.$n),sum(.$n)/sum(.$n)*100))
   }

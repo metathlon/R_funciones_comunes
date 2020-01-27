@@ -11,6 +11,8 @@ data_ <- data.frame(EDAD=edad_,ESTATURA=estatura_,SEXO=sexo_,RUBIO=rubio_)
 source("funciones_comunes/freq.R")
 
 freq(data_,SEXO,RUBIO)
+freq(data_,SEXO,group_by_col=RUBIO, debug = TRUE)
+
 freq(data_,SEXO,RUBIO, decimales = 3)
 freq(data_,SEXO,RUBIO, decimales = 3, sort_by_percent = TRUE)
 
